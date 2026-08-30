@@ -26,7 +26,6 @@ if uploaded_file is not None:
   orig_w, orig_h = original_image.size
   aspect_ratio = orig_h / orig_w
 
-  # Doubled base recommendation metrics
   rec_width = 220
   rec_height = int(rec_width * aspect_ratio)
   rec_colors = 44
@@ -45,9 +44,8 @@ if uploaded_file is not None:
     )
 
   st.markdown("---")
-  st.subheader("Fine-Tune Pattern Prompts (Doubled Ranges)")
+  st.subheader("Fine-Tune Pattern Prompts")
 
-  # All adjustable features and their ranges doubled
   grid_width = st.slider(
       "Target Canvas Width (Stitches)",
       min_value=120,
@@ -62,12 +60,13 @@ if uploaded_file is not None:
       value=rec_colors,
       step=2,
   )
+  # Limited, subtle saturation adjustments
   color_balance = st.slider(
       "Natural Color Balance (Saturation)",
-      min_value=1.8,
-      max_value=3.0,
-      value=2.2,
-      step=0.1,
+      min_value=0.8,
+      max_value=1.5,
+      value=1.1,
+      step=0.05,
   )
   cell_size = st.slider(
       "Grid Zoom / Cell Pixel Size", min_value=20, max_value=60, value=36, step=4
@@ -75,10 +74,16 @@ if uploaded_file is not None:
 
   grid_height = int(grid_width * aspect_ratio)
 
+  # Calculate approximate physical size based on standard 14-count canvas mesh
+  mesh_count = 14
+  width_inches = grid_width / mesh_count
+  height_inches = grid_height / mesh_count
+
   st.info(
       f"Current Selection: **{grid_width} x {grid_height} grid** ("
-      f"{grid_width * grid_height:,} total stitches) with **{num_colors}**"
-      f" colors."
+      f"{grid_width * grid_height:,} total stitches) | Approx. Canvas Size (14-count):"
+      f" **{width_inches:.1f}\" x {height_inches:.1f}\"** with **{num_colors}**"
+      " colors."
   )
 
   if st.button("Generate Ornament Pattern Canvas", type="primary"):
