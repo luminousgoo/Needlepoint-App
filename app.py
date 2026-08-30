@@ -56,7 +56,8 @@ if uploaded_file is not None:
                 vibrant_image = enhancer.enhance(color_boost)
 
                 small_image = vibrant_image.resize((grid_width, grid_height), Image.Resampling.LANCZOS)
-                quantized_image = small_image.quantize(colors=num_colors, method=Image.Quantize.MEDIANCUT).convert("RGB")
+                # Fixed quantization method reference
+                quantized_image = small_image.quantize(colors=num_colors, method=Image.MEDIANCUT).convert("RGB")
 
                 unique_colors = sorted(list(set(quantized_image.getdata())))
                 preview_image = quantized_image.resize((grid_width * cell_size, grid_height * cell_size), Image.Resampling.NEAREST)
@@ -73,7 +74,6 @@ if uploaded_file is not None:
                     radius = min(grid_width, grid_height) * cell_size // 2
                     draw.ellipse([(center_x - radius, center_y - radius), (center_x + radius, center_y + radius)], outline="black", width=2)
 
-                # Store in session state to prevent scope errors
                 st.session_state['preview_image'] = preview_image
                 st.session_state['unique_colors'] = unique_colors
                 st.session_state['generated'] = True
