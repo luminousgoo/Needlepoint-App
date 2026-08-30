@@ -49,8 +49,10 @@ if uploaded_file is not None:
   ornament_shape = st.sidebar.selectbox(
       "Ornament Shape", ["Circle", "Square", "Arch"]
   )
+  
+  # Expanded mesh options including 10, 12, 13, 14, 18, and 24
   mesh_count = st.sidebar.selectbox(
-      "Canvas Mesh Count (Holes Per Inch)", [10, 12, 14, 18, 24], index=2
+      "Canvas Mesh Count (Holes Per Inch)", [10, 12, 13, 14, 18, 24], index=3
   )
 
   grid_width = st.slider(
