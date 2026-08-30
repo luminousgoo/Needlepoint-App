@@ -46,6 +46,11 @@ if uploaded_file is not None:
   st.markdown("---")
   st.subheader("Fine-Tune Pattern Prompts")
 
+  # Shape selector for Christmas ornament styles focused on figures
+  ornament_shape = st.sidebar.selectbox(
+      "Ornament Shape", ["Circle", "Square", "Arch"]
+  )
+
   grid_width = st.slider(
       "Target Canvas Width (Stitches)",
       min_value=120,
@@ -60,7 +65,6 @@ if uploaded_file is not None:
       value=rec_colors,
       step=2,
   )
-  # Limited, subtle saturation adjustments
   color_balance = st.slider(
       "Natural Color Balance (Saturation)",
       min_value=0.8,
@@ -72,23 +76,39 @@ if uploaded_file is not None:
       "Grid Zoom / Cell Pixel Size", min_value=20, max_value=60, value=36, step=4
   )
 
-  grid_height = int(grid_width * aspect_ratio)
+  # Adjust crop and dimensions based on selected ornament shape
+  working_image = original_image
+  if ornament_shape in ["Circle", "Square"]:
+    min_dim = min(orig_w, orig_h)
+    left = (orig_w - min_dim) // 2
+    top = (orig_h - min_dim) // 2
+    working_image = working_image.crop((left, top, left + min_dim, top + min_dim))
+    crop_w, crop_h = min_dim, min_dim
+  elif ornament_shape == "Arch":
+    # Arch shape typically features a taller aspect ratio (e.g., 1:1.2) to frame figures nicely
+    crop_w = min(orig_w, int(orig_h / 1.2))
+    crop_h = int(crop_w * 1.2)
+    left = (orig_w - crop_w) // 2
+    top = (orig_h - crop_h) // 2
+    working_image = working_image.crop((left, top, left + crop_w, top + crop_h))
 
-  # Calculate approximate physical size based on standard 14-count canvas mesh
+  shape_aspect = crop_h / crop_w
+  grid_height = int(grid_width * shape_aspect)
+
   mesh_count = 14
   width_inches = grid_width / mesh_count
   height_inches = grid_height / mesh_count
 
   st.info(
-      f"Current Selection: **{grid_width} x {grid_height} grid** ("
-      f"{grid_width * grid_height:,} total stitches) | Approx. Canvas Size (14-count):"
+      f"Current Selection ({ornament_shape}): **{grid_width} x {grid_height}"
+      f" grid** ({grid_width * grid_height:,} total stitches) | Approx. Size:"
       f" **{width_inches:.1f}\" x {height_inches:.1f}\"** with **{num_colors}**"
       " colors."
   )
 
   if st.button("Generate Ornament Pattern Canvas", type="primary"):
     with st.spinner("Processing image and mapping colors..."):
-      enhancer = ImageEnhance.Color(original_image)
+      enhancer = ImageEnhance.Color(working_image)
       balanced_image = enhancer.enhance(color_balance)
 
       small_image = balanced_image.resize(
@@ -112,6 +132,46 @@ if uploaded_file is not None:
         draw.line([(x, 0), (x, grid_height * cell_size)], fill=(200, 200, 200))
       for y in range(0, grid_height * cell_size, cell_size):
         draw.line([(0, y), (grid_width * cell_size, y)], fill=(200, 200, 200))
+
+      # Draw cutting guides matching the chosen ornament shape
+      max_px_w = grid_width * cell_size
+      max_px_h = grid_height * cell_size
+
+      if ornament_shape == "Circle":
+        center_x = max_px_w // 2
+        center_y = max_px_h // 2
+        radius = min(max_px_w, max_px_h) // 2
+        draw.ellipse(
+            [
+                (center_x - radius, center_y - radius),
+                (center_x + radius, center_y + radius),
+            ],
+            outline="black",
+            width=3,
+        )
+      elif ornament_shape == "Square":
+        draw.rectangle(
+            [(0, 0), (max_px_w - 1, max_px_h - 1)], outline="black", width=3
+        )
+      elif ornament_shape == "Arch":
+        # Draw an arched guideline (rectangle base with a semicircular top)
+        radius = max_px_w // 2
+        draw.arc(
+            [(0, 0), (max_px_w, radius * 2)],
+            start=180,
+            end=360,
+            fill="black",
+            width=3,
+        )
+        draw.line(
+            [(0, radius), (0, max_px_h)], fill="black", width=3
+        )  # Left side
+        draw.line(
+            [(max_px_w, radius), (max_px_h, max_px_h)], fill="black", width=3
+        )  # Right side (fixed index)
+        draw.line(
+            [(0, max_px_h - 1), (max_px_w, max_px_h - 1)], fill="black", width=3
+        )  # Bottom
 
       st.session_state['preview_image'] = preview_image
       st.session_state['unique_colors'] = unique_colors
