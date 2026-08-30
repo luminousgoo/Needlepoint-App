@@ -26,7 +26,6 @@ if uploaded_file is not None:
   orig_w, orig_h = original_image.size
   aspect_ratio = orig_h / orig_w
 
-  # Sweet-spot defaults for realistic ornament detail without posterization
   rec_width = 110
   rec_height = int(rec_width * aspect_ratio)
   rec_colors = 22
@@ -81,10 +80,7 @@ if uploaded_file is not None:
   )
 
   if st.button("Generate Ornament Pattern Canvas", type="primary"):
-    with st.spinner(
-        "Applying neural color mapping for realistic photo blending..."
-    ):
-      # Use subtle saturation control to maintain natural skin and sand tones
+    with st.spinner("Processing image and mapping colors..."):
       enhancer = ImageEnhance.Color(original_image)
       balanced_image = enhancer.enhance(color_balance)
 
@@ -92,9 +88,9 @@ if uploaded_file is not None:
           (grid_width, grid_height), Image.Resampling.LANCZOS
       )
 
-      # Switch to NEUQUANT method: vastly superior for natural photographic gradients and faces
+      # Using MAXCOVERAGE method for stable, high-fidelity color reduction
       quantized_image = small_image.quantize(
-          colors=num_colors, method=Image.NEUQUANT
+          colors=num_colors, method=Image.Quantize.MAXCOVERAGE
       ).convert("RGB")
 
       paletted_pixels = quantized_image.getdata()
