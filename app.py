@@ -52,55 +52,52 @@ if uploaded_file is not None:
 
         if st.button("Generate Vibrant Pattern Canvas", type="primary"):
             with st.spinner("Processing image and boosting vibrancy..."):
-                # Step 1: Boost color saturation to match vibrant target style
                 enhancer = ImageEnhance.Color(working_image)
                 vibrant_image = enhancer.enhance(color_boost)
 
-                # Step 2: Resize down to grid size smoothly
                 small_image = vibrant_image.resize((grid_width, grid_height), Image.Resampling.LANCZOS)
-
-                # Step 3: Quantize colors cleanly
                 quantized_image = small_image.quantize(colors=num_colors, method=Image.Quantize.MEDIANCUT).convert("RGB")
 
-                # Extract unique colors for legend
                 unique_colors = sorted(list(set(quantized_image.getdata())))
-
-                # Step 4: Enlarge pixels for pattern preview
                 preview_image = quantized_image.resize((grid_width * cell_size, grid_height * cell_size), Image.Resampling.NEAREST)
 
-                # Step 5: Draw grid lines
                 draw = ImageDraw.Draw(preview_image)
                 for x in range(0, grid_width * cell_size, cell_size):
                     draw.line([(x, 0), (x, grid_height * cell_size)], fill=(160, 160, 160))
                 for y in range(0, grid_height * cell_size, cell_size):
                     draw.line([(0, y), (grid_width * cell_size, y)], fill=(160, 160, 160))
                 
-                # Step 6: Draw circular ornament guide
                 if use_circular_crop:
                     center_x = grid_width * cell_size // 2
                     center_y = grid_height * cell_size // 2
                     radius = min(grid_width, grid_height) * cell_size // 2
                     draw.ellipse([(center_x - radius, center_y - radius), (center_x + radius, center_y + radius)], outline="black", width=2)
 
-        st.success("Pattern generated successfully!")
-        c1, c2 = st.columns([2, 1])
-        with c1:
-            st.subheader("Printable Pattern Canvas")
-            st.image(preview_image, use_container_width=True)
-            buf = io.BytesIO()
-            preview_image.save(buf, format="PNG")
-            st.download_button(label="Download Pattern Chart (.png)", data=buf.getvalue(), file_name="vibrant_needlepoint_chart.png", mime="image/png")
+                # Store in session state to prevent scope errors
+                st.session_state['preview_image'] = preview_image
+                st.session_state['unique_colors'] = unique_colors
+                st.session_state['generated'] = True
 
-        with c2:
-            st.subheader("Color Palette & Legend")
-            for i, color in enumerate(unique_colors):
-                swatch = Image.new("RGB", (30, 30), color)
-                sw = io.BytesIO()
-                swatch.save(sw, format="PNG")
-                col_a, col_b = st.columns([1, 5])
-                with col_a:
-                    st.image(sw, width=30)
-                with col_b:
-                    st.write(f"**Color #{i+1}** — RGB: `{color}`")
+        if st.session_state.get('generated', False):
+            st.success("Pattern generated successfully!")
+            c1, c2 = st.columns([2, 1])
+            with c1:
+                st.subheader("Printable Pattern Canvas")
+                st.image(st.session_state['preview_image'], use_container_width=True)
+                buf = io.BytesIO()
+                st.session_state['preview_image'].save(buf, format="PNG")
+                st.download_button(label="Download Pattern Chart (.png)", data=buf.getvalue(), file_name="vibrant_needlepoint_chart.png", mime="image/png")
+
+            with c2:
+                st.subheader("Color Palette & Legend")
+                for i, color in enumerate(st.session_state['unique_colors']):
+                    swatch = Image.new("RGB", (30, 30), color)
+                    sw = io.BytesIO()
+                    swatch.save(sw, format="PNG")
+                    col_a, col_b = st.columns([1, 5])
+                    with col_a:
+                        st.image(sw, width=30)
+                    with col_b:
+                        st.write(f"**Color #{i+1}** — RGB: `{color}`")
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
