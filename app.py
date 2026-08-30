@@ -23,28 +23,23 @@ if uploaded_file is not None:
     st.error("Error: Could not read image file. Please try another image.")
     st.stop()
 
-  orig_w, orig_h = original_image.size
-  aspect_ratio = orig_h / orig_w
-
-  col1, col2 = st.columns(2)
-  with col1:
-    st.subheader("Original Image")
-    st.image(original_image, use_container_width=True)
-
-  with col2:
-    st.subheader("✨ Ornament Settings")
-    st.write(
-        "Customize your shape, physical size, mesh density, zoom, and framing"
-        " below!"
-    )
-
   st.markdown("---")
-  st.subheader("1. Ornament Shape & Mesh Density")
+  st.subheader("1. Ornament Shape, Mesh Density & Rotation")
 
   ornament_shape = st.selectbox("Ornament Shape", ["Circle", "Square", "Arch"])
   mesh_count = st.selectbox(
       "Canvas Mesh Count (Holes Per Inch)", [10, 12, 13, 14, 18, 24], index=3
   )
+  
+  # Custom rotation feature
+  rotation_angle = st.slider(
+      "Rotate Image (Degrees)", min_value=-180, max_value=180, value=0, step=5
+  )
+
+  # Apply rotation immediately to the original image (with expand=True to avoid cutting corners)
+  rotated_image = original_image.rotate(rotation_angle, expand=True)
+  orig_w, orig_h = rotated_image.size
+  aspect_ratio = orig_h / orig_w
 
   st.markdown("---")
   st.subheader("2. Physical Size, Zoom & Pan Controls")
@@ -66,7 +61,6 @@ if uploaded_file is not None:
 
   grid_height = int(grid_width * shape_aspect)
 
-  # Added Zoom Feature Slider
   zoom_level = st.slider(
       "Zoom Level (Magnify Subject)",
       min_value=1.0,
@@ -98,7 +92,7 @@ if uploaded_file is not None:
       "Grid Zoom / Cell Pixel Size", min_value=20, max_value=60, value=36, step=4
   )
 
-  # Apply zoom and pan cropping calculations
+  # Apply zoom and pan cropping calculations on the rotated image
   if ornament_shape in ["Circle", "Square"]:
     base_crop_dim = min(orig_w, orig_h)
     crop_dim = int(base_crop_dim / zoom_level)
@@ -106,7 +100,7 @@ if uploaded_file is not None:
     max_top = orig_h - crop_dim
     left = int(max_left * (pan_x_pct / 100.0)) if max_left > 0 else 0
     top = int(max_top * (pan_y_pct / 100.0)) if max_top > 0 else 0
-    working_image = original_image.crop(
+    working_image = rotated_image.crop(
         (left, top, left + crop_dim, top + crop_dim)
     )
   elif ornament_shape == "Arch":
@@ -124,20 +118,27 @@ if uploaded_file is not None:
     max_top = orig_h - crop_h
     left = int(max_left * (pan_x_pct / 100.0)) if max_left > 0 else 0
     top = int(max_top * (pan_y_pct / 100.0)) if max_top > 0 else 0
-    working_image = original_image.crop(
+    working_image = rotated_image.crop(
         (left, top, left + crop_w, top + crop_h)
     )
 
   actual_width_inches = grid_width / mesh_count
   actual_height_inches = grid_height / mesh_count
 
-  st.info(
-      f"Current Selection ({ornament_shape}, {mesh_count} Mesh, {zoom_level}x"
-      f" Zoom): **{grid_width} x {grid_height} grid** ("
-      f"{grid_width * grid_height:,} total stitches) | Exact Size:"
-      f" **{actual_width_inches:.2f}\" x {actual_height_inches:.2f}\"** with"
-      f" **{num_colors}** colors."
-  )
+  col1, col2 = st.columns(2)
+  with col1:
+    st.subheader("Rotated & Framed View")
+    st.image(working_image, use_container_width=True)
+
+  with col2:
+    st.subheader("✨ Specifications")
+    st.write(
+        f"**{ornament_shape}** ({mesh_count} Mesh, {zoom_level}x Zoom,"
+        f" {rotation_angle}° Rotation): **{grid_width} x {grid_height} grid**"
+        f" ({grid_width * grid_height:,} stitches) | Exact Size:"
+        f" **{actual_width_inches:.2f}\" x {actual_height_inches:.2f}\"** with"
+        f" **{num_colors}** colors."
+    )
 
   if st.button("Generate Ornament Pattern Canvas", type="primary"):
     with st.spinner("Processing image and mapping colors..."):
