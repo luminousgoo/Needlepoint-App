@@ -26,9 +26,9 @@ if uploaded_file is not None:
   orig_w, orig_h = original_image.size
   aspect_ratio = orig_h / orig_w
 
-  rec_width = 220
+  rec_width = 120
   rec_height = int(rec_width * aspect_ratio)
-  rec_colors = 44
+  rec_colors = 36
 
   col1, col2 = st.columns(2)
   with col1:
@@ -46,21 +46,21 @@ if uploaded_file is not None:
   st.markdown("---")
   st.subheader("Fine-Tune Pattern Prompts")
 
-  # Shape selector for Christmas ornament styles focused on figures
   ornament_shape = st.sidebar.selectbox(
       "Ornament Shape", ["Circle", "Square", "Arch"]
   )
 
+  # Minimum canvas width lowered to 40 stitches to support ~3" x 3" dimensions on a 14-count mesh
   grid_width = st.slider(
       "Target Canvas Width (Stitches)",
-      min_value=120,
+      min_value=40,
       max_value=300,
       value=rec_width,
-      step=10,
+      step=5,
   )
   num_colors = st.slider(
       "Number of Thread Colors",
-      min_value=24,
+      min_value=16,
       max_value=64,
       value=rec_colors,
       step=2,
@@ -76,7 +76,6 @@ if uploaded_file is not None:
       "Grid Zoom / Cell Pixel Size", min_value=20, max_value=60, value=36, step=4
   )
 
-  # Adjust crop and dimensions based on selected ornament shape
   working_image = original_image
   if ornament_shape in ["Circle", "Square"]:
     min_dim = min(orig_w, orig_h)
@@ -85,7 +84,6 @@ if uploaded_file is not None:
     working_image = working_image.crop((left, top, left + min_dim, top + min_dim))
     crop_w, crop_h = min_dim, min_dim
   elif ornament_shape == "Arch":
-    # Arch shape typically features a taller aspect ratio (e.g., 1:1.2) to frame figures nicely
     crop_w = min(orig_w, int(orig_h / 1.2))
     crop_h = int(crop_w * 1.2)
     left = (orig_w - crop_w) // 2
@@ -133,7 +131,6 @@ if uploaded_file is not None:
       for y in range(0, grid_height * cell_size, cell_size):
         draw.line([(0, y), (grid_width * cell_size, y)], fill=(200, 200, 200))
 
-      # Draw cutting guides matching the chosen ornament shape
       max_px_w = grid_width * cell_size
       max_px_h = grid_height * cell_size
 
@@ -154,7 +151,6 @@ if uploaded_file is not None:
             [(0, 0), (max_px_w - 1, max_px_h - 1)], outline="black", width=3
         )
       elif ornament_shape == "Arch":
-        # Draw an arched guideline (rectangle base with a semicircular top)
         radius = max_px_w // 2
         draw.arc(
             [(0, 0), (max_px_w, radius * 2)],
@@ -163,15 +159,11 @@ if uploaded_file is not None:
             fill="black",
             width=3,
         )
-        draw.line(
-            [(0, radius), (0, max_px_h)], fill="black", width=3
-        )  # Left side
-        draw.line(
-            [(max_px_w, radius), (max_px_h, max_px_h)], fill="black", width=3
-        )  # Right side (fixed index)
+        draw.line([(0, radius), (0, max_px_h)], fill="black", width=3)
+        draw.line([(max_px_w, radius), (max_px_w, max_px_h)], fill="black", width=3)
         draw.line(
             [(0, max_px_h - 1), (max_px_w, max_px_h - 1)], fill="black", width=3
-        )  # Bottom
+        )
 
       st.session_state['preview_image'] = preview_image
       st.session_state['unique_colors'] = unique_colors
@@ -207,4 +199,3 @@ if uploaded_file is not None:
         file_name="ornament_needlepoint_canvas.png",
         mime="image/png",
     )
-
