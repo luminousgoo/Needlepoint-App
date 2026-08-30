@@ -44,16 +44,15 @@ if uploaded_file is not None:
     )
 
   st.markdown("---")
-  st.subheader("Fine-Tune Pattern Prompts")
+  st.subheader("Select Ornament Shape & Mesh Density")
 
-  ornament_shape = st.sidebar.selectbox(
-      "Ornament Shape", ["Circle", "Square", "Arch"]
-  )
-  
-  # Expanded mesh options including 10, 12, 13, 14, 18, and 24
-  mesh_count = st.sidebar.selectbox(
+  ornament_shape = st.selectbox("Ornament Shape", ["Circle", "Square", "Arch"])
+  mesh_count = st.selectbox(
       "Canvas Mesh Count (Holes Per Inch)", [10, 12, 13, 14, 18, 24], index=3
   )
+
+  st.markdown("---")
+  st.subheader("Fine-Tune Pattern Prompts")
 
   grid_width = st.slider(
       "Target Canvas Width (Stitches)",
@@ -137,6 +136,7 @@ if uploaded_file is not None:
       max_px_w = grid_width * cell_size
       max_px_h = grid_height * cell_size
 
+      # Thicker outline width set to 6 for high visibility
       if ornament_shape == "Circle":
         center_x = max_px_w // 2
         center_y = max_px_h // 2
@@ -147,11 +147,11 @@ if uploaded_file is not None:
                 (center_x + radius, center_y + radius),
             ],
             outline="black",
-            width=3,
+            width=6,
         )
       elif ornament_shape == "Square":
         draw.rectangle(
-            [(0, 0), (max_px_w - 1, max_px_h - 1)], outline="black", width=3
+            [(0, 0), (max_px_w - 1, max_px_h - 1)], outline="black", width=6
         )
       elif ornament_shape == "Arch":
         radius = max_px_w // 2
@@ -160,12 +160,12 @@ if uploaded_file is not None:
             start=180,
             end=360,
             fill="black",
-            width=3,
+            width=6,
         )
-        draw.line([(0, radius), (0, max_px_h)], fill="black", width=3)
-        draw.line([(max_px_w, radius), (max_px_w, max_px_h)], fill="black", width=3)
+        draw.line([(0, radius), (0, max_px_h)], fill="black", width=6)
+        draw.line([(max_px_w, radius), (max_px_w, max_px_h)], fill="black", width=6)
         draw.line(
-            [(0, max_px_h - 1), (max_px_w, max_px_h - 1)], fill="black", width=3
+            [(0, max_px_h - 1), (max_px_w, max_px_h - 1)], fill="black", width=6
         )
 
       st.session_state['preview_image'] = preview_image
