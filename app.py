@@ -1,5 +1,5 @@
 import io
-from PIL import Image, ImageContrast, ImageDraw, ImageEnhance, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageEnhance, UnidentifiedImageError
 import streamlit as st
 
 st.set_page_config(
@@ -26,7 +26,6 @@ if uploaded_file is not None:
   orig_w, orig_h = original_image.size
   aspect_ratio = orig_h / orig_w
 
-  # Optimized defaults for high-definition ornament detail
   rec_width = 100
   rec_height = int(rec_width * aspect_ratio)
   rec_colors = 24
@@ -89,7 +88,6 @@ if uploaded_file is not None:
 
   if st.button("Generate High-Detail Pattern Canvas", type="primary"):
     with st.spinner("Processing image, enhancing detail and vibrancy..."):
-      # Enhance both color saturation and contrast for sharp mockup style
       enhancer_color = ImageEnhance.Color(original_image)
       vibrant_image = enhancer_color.enhance(color_boost)
 
@@ -114,7 +112,7 @@ if uploaded_file is not None:
       draw = ImageDraw.Draw(preview_image)
       for x in range(0, grid_width * cell_size, cell_size):
         draw.line([(x, 0), (x, grid_height * cell_size)], fill=(200, 200, 200))
-      for y in range(0, grid_width * cell_size, cell_size):
+      for y in range(0, grid_height * cell_size, cell_size):
         draw.line([(0, y), (grid_width * cell_size, y)], fill=(200, 200, 200))
 
       st.session_state['preview_image'] = preview_image
