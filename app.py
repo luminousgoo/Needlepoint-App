@@ -3,13 +3,13 @@ from PIL import Image, ImageDraw, ImageEnhance, UnidentifiedImageError
 import streamlit as st
 
 st.set_page_config(
-    page_title="DIY Needlepoint Pattern Generator", layout="centered"
+    page_title="Ornament Needlepoint Pattern Generator", layout="centered"
 )
 
-st.title("🪡 High-Detail Needlepoint Ornament Generator")
+st.title("🪡 Ornament-Grade Needlepoint Generator")
 st.write(
-    "Upload any photo to automatically generate a high-vibrancy, detailed"
-    " ornament pattern chart."
+    "Upload your photo to generate a soft, photo-realistic needlepoint pattern"
+    " chart matching professional ornament mockups."
 )
 
 uploaded_file = st.file_uploader(
@@ -26,9 +26,10 @@ if uploaded_file is not None:
   orig_w, orig_h = original_image.size
   aspect_ratio = orig_h / orig_w
 
-  rec_width = 100
+  # Sweet-spot defaults for realistic ornament detail without posterization
+  rec_width = 110
   rec_height = int(rec_width * aspect_ratio)
-  rec_colors = 24
+  rec_colors = 22
 
   col1, col2 = st.columns(2)
   with col1:
@@ -36,43 +37,36 @@ if uploaded_file is not None:
     st.image(original_image, use_container_width=True)
 
   with col2:
-    st.subheader("✨ High-Detail Settings")
+    st.subheader("✨ Ornament Settings")
     st.write(
-        f"Optimized for ornament mockup quality: **{rec_width} stitches** wide"
-        f" (height: **{rec_height} stitches**) using **{rec_colors} colors** for"
-        " maximum clarity."
+        f"Optimized for smooth gradients: **{rec_width} stitches** wide"
+        f" (height: **{rec_height} stitches**) using **{rec_colors} harmonious"
+        " colors**."
     )
 
   st.markdown("---")
-  st.subheader("Adjust Pattern Prompts")
+  st.subheader("Fine-Tune Pattern Prompts")
 
   grid_width = st.slider(
       "Target Canvas Width (Stitches)",
-      min_value=50,
+      min_value=60,
       max_value=150,
       value=rec_width,
       step=5,
   )
   num_colors = st.slider(
       "Number of Thread Colors",
-      min_value=8,
+      min_value=12,
       max_value=32,
       value=rec_colors,
       step=1,
   )
-  color_boost = st.slider(
-      "Color Vibrancy Boost",
-      min_value=1.0,
-      max_value=2.5,
-      value=1.5,
-      step=0.1,
-  )
-  contrast_boost = st.slider(
-      "Detail Contrast Boost",
-      min_value=1.0,
-      max_value=2.0,
-      value=1.2,
-      step=0.1,
+  color_balance = st.slider(
+      "Natural Color Balance (Saturation)",
+      min_value=0.9,
+      max_value=1.5,
+      value=1.1,
+      step=0.05,
   )
   cell_size = st.slider(
       "Grid Zoom / Cell Pixel Size", min_value=10, max_value=30, value=18, step=2
@@ -86,19 +80,21 @@ if uploaded_file is not None:
       f" colors."
   )
 
-  if st.button("Generate High-Detail Pattern Canvas", type="primary"):
-    with st.spinner("Processing image, enhancing detail and vibrancy..."):
-      enhancer_color = ImageEnhance.Color(original_image)
-      vibrant_image = enhancer_color.enhance(color_boost)
+  if st.button("Generate Ornament Pattern Canvas", type="primary"):
+    with st.spinner(
+        "Applying neural color mapping for realistic photo blending..."
+    ):
+      # Use subtle saturation control to maintain natural skin and sand tones
+      enhancer = ImageEnhance.Color(original_image)
+      balanced_image = enhancer.enhance(color_balance)
 
-      enhancer_contrast = ImageEnhance.Contrast(vibrant_image)
-      detailed_image = enhancer_contrast.enhance(contrast_boost)
-
-      small_image = detailed_image.resize(
+      small_image = balanced_image.resize(
           (grid_width, grid_height), Image.Resampling.LANCZOS
       )
+
+      # Switch to NEUQUANT method: vastly superior for natural photographic gradients and faces
       quantized_image = small_image.quantize(
-          colors=num_colors, method=Image.MEDIANCUT
+          colors=num_colors, method=Image.NEUQUANT
       ).convert("RGB")
 
       paletted_pixels = quantized_image.getdata()
@@ -120,7 +116,7 @@ if uploaded_file is not None:
       st.session_state['generated'] = True
 
   if st.session_state.get('generated', False):
-    st.success("High-detail canvas generated successfully!")
+    st.success("Ornament pattern canvas generated successfully!")
     st.subheader("Printable Pattern Canvas")
     st.image(st.session_state['preview_image'], use_container_width=True)
 
@@ -144,8 +140,8 @@ if uploaded_file is not None:
     byte_im = buf.getvalue()
 
     st.download_button(
-        label="Download High-Detail Pattern Canvas (.png)",
+        label="Download Ornament Pattern Canvas (.png)",
         data=byte_im,
-        file_name="high_detail_needlepoint_canvas.png",
+        file_name="ornament_needlepoint_canvas.png",
         mime="image/png",
     )
