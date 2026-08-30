@@ -206,3 +206,4 @@ if uploaded_file is not None:
                 st.write(f"**Color #{i+1}** — RGB: `{color}`")
   except Exception as e:
       st.error(f"An unexpected error occurred: {e}")
+
