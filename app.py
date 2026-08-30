@@ -48,7 +48,6 @@ if uploaded_file is not None:
   st.markdown("---")
   st.subheader("2. Physical Size & Pan Controls")
 
-  # Specify size in physical inches
   target_inches = st.slider(
       "Target Finished Size (Inches)",
       min_value=2.0,
@@ -57,22 +56,16 @@ if uploaded_file is not None:
       step=0.25,
   )
 
-  # Calculate grid width dynamically based on inches and mesh count
   grid_width = int(target_inches * mesh_count)
 
-  # Shape aspect ratios
   if ornament_shape in ["Circle", "Square"]:
     shape_aspect = 1.0
-  else:  # Arch
+  else:
     shape_aspect = 1.2
 
   grid_height = int(grid_width * shape_aspect)
 
-  # Pan / Position Sliders to move the crop window across the source image
   st.write("### Pan & Position Window")
-  max_pan_x = max(0, orig_w - int(orig_h / shape_aspect))
-  max_pan_y = max(0, orig_h - int(orig_w * shape_aspect))
-
   pan_x_pct = st.slider(
       "Horizontal Pan (Left to Right)", 0, 100, 50, step=5
   )
@@ -81,8 +74,9 @@ if uploaded_file is not None:
   st.markdown("---")
   st.subheader("3. Color & Zoom Prompts")
 
+  # Minimum thread colors expanded down to 4
   num_colors = st.slider(
-      "Number of Thread Colors", min_value=16, max_value=64, value=36, step=2
+      "Number of Thread Colors", min_value=4, max_value=64, value=36, step=2
   )
   color_balance = st.slider(
       "Natural Color Balance (Saturation)",
@@ -95,7 +89,6 @@ if uploaded_file is not None:
       "Grid Zoom / Cell Pixel Size", min_value=20, max_value=60, value=36, step=4
   )
 
-  # Apply panning and cropping based on user controls
   if ornament_shape in ["Circle", "Square"]:
     crop_dim = min(orig_w, orig_h)
     left = int((orig_w - crop_dim) * (pan_x_pct / 100.0))
