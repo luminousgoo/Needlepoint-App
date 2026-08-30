@@ -26,9 +26,10 @@ if uploaded_file is not None:
   orig_w, orig_h = original_image.size
   aspect_ratio = orig_h / orig_w
 
-  rec_width = 110
+  # Doubled base recommendation metrics
+  rec_width = 220
   rec_height = int(rec_width * aspect_ratio)
-  rec_colors = 22
+  rec_colors = 44
 
   col1, col2 = st.columns(2)
   with col1:
@@ -44,31 +45,32 @@ if uploaded_file is not None:
     )
 
   st.markdown("---")
-  st.subheader("Fine-Tune Pattern Prompts")
+  st.subheader("Fine-Tune Pattern Prompts (Doubled Ranges)")
 
+  # All adjustable features and their ranges doubled
   grid_width = st.slider(
       "Target Canvas Width (Stitches)",
-      min_value=60,
-      max_value=150,
+      min_value=120,
+      max_value=300,
       value=rec_width,
-      step=5,
+      step=10,
   )
   num_colors = st.slider(
       "Number of Thread Colors",
-      min_value=12,
-      max_value=32,
+      min_value=24,
+      max_value=64,
       value=rec_colors,
-      step=1,
+      step=2,
   )
   color_balance = st.slider(
       "Natural Color Balance (Saturation)",
-      min_value=0.9,
-      max_value=1.5,
-      value=1.1,
-      step=0.05,
+      min_value=1.8,
+      max_value=3.0,
+      value=2.2,
+      step=0.1,
   )
   cell_size = st.slider(
-      "Grid Zoom / Cell Pixel Size", min_value=10, max_value=30, value=18, step=2
+      "Grid Zoom / Cell Pixel Size", min_value=20, max_value=60, value=36, step=4
   )
 
   grid_height = int(grid_width * aspect_ratio)
@@ -88,7 +90,6 @@ if uploaded_file is not None:
           (grid_width, grid_height), Image.Resampling.LANCZOS
       )
 
-      # Using MAXCOVERAGE method for stable, high-fidelity color reduction
       quantized_image = small_image.quantize(
           colors=num_colors, method=Image.Quantize.MAXCOVERAGE
       ).convert("RGB")
