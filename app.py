@@ -34,7 +34,8 @@ if uploaded_file is not None:
   with col2:
     st.subheader("✨ Ornament Settings")
     st.write(
-        "Customize your shape, physical size, mesh density, and framing below!"
+        "Customize your shape, physical size, mesh density, zoom, and framing"
+        " below!"
     )
 
   st.markdown("---")
@@ -46,7 +47,7 @@ if uploaded_file is not None:
   )
 
   st.markdown("---")
-  st.subheader("2. Physical Size & Pan Controls")
+  st.subheader("2. Physical Size, Zoom & Pan Controls")
 
   target_inches = st.slider(
       "Target Finished Size (Inches)",
@@ -65,6 +66,15 @@ if uploaded_file is not None:
 
   grid_height = int(grid_width * shape_aspect)
 
+  # Added Zoom Feature Slider
+  zoom_level = st.slider(
+      "Zoom Level (Magnify Subject)",
+      min_value=1.0,
+      max_value=3.0,
+      value=1.0,
+      step=0.1,
+  )
+
   st.write("### Pan & Position Window")
   pan_x_pct = st.slider(
       "Horizontal Pan (Left to Right)", 0, 100, 50, step=5
@@ -74,7 +84,6 @@ if uploaded_file is not None:
   st.markdown("---")
   st.subheader("3. Color & Zoom Prompts")
 
-  # Minimum thread colors expanded down to 4
   num_colors = st.slider(
       "Number of Thread Colors", min_value=4, max_value=64, value=36, step=2
   )
@@ -89,23 +98,32 @@ if uploaded_file is not None:
       "Grid Zoom / Cell Pixel Size", min_value=20, max_value=60, value=36, step=4
   )
 
+  # Apply zoom and pan cropping calculations
   if ornament_shape in ["Circle", "Square"]:
-    crop_dim = min(orig_w, orig_h)
-    left = int((orig_w - crop_dim) * (pan_x_pct / 100.0))
-    top = int((orig_h - crop_dim) * (pan_y_pct / 100.0))
+    base_crop_dim = min(orig_w, orig_h)
+    crop_dim = int(base_crop_dim / zoom_level)
+    max_left = orig_w - crop_dim
+    max_top = orig_h - crop_dim
+    left = int(max_left * (pan_x_pct / 100.0)) if max_left > 0 else 0
+    top = int(max_top * (pan_y_pct / 100.0)) if max_top > 0 else 0
     working_image = original_image.crop(
         (left, top, left + crop_dim, top + crop_dim)
     )
   elif ornament_shape == "Arch":
     if orig_w >= orig_h / 1.2:
-      crop_h = orig_h
-      crop_w = int(orig_h / 1.2)
+      base_crop_h = orig_h
+      base_crop_w = int(orig_h / 1.2)
     else:
-      crop_w = orig_w
-      crop_h = int(orig_w * 1.2)
+      base_crop_w = orig_w
+      base_crop_h = int(orig_w * 1.2)
 
-    left = int((orig_w - crop_w) * (pan_x_pct / 100.0))
-    top = int((orig_h - crop_h) * (pan_y_pct / 100.0))
+    crop_w = int(base_crop_w / zoom_level)
+    crop_h = int(base_crop_h / zoom_level)
+
+    max_left = orig_w - crop_w
+    max_top = orig_h - crop_h
+    left = int(max_left * (pan_x_pct / 100.0)) if max_left > 0 else 0
+    top = int(max_top * (pan_y_pct / 100.0)) if max_top > 0 else 0
     working_image = original_image.crop(
         (left, top, left + crop_w, top + crop_h)
     )
@@ -114,10 +132,11 @@ if uploaded_file is not None:
   actual_height_inches = grid_height / mesh_count
 
   st.info(
-      f"Current Selection ({ornament_shape}, {mesh_count} Mesh):"
-      f" **{grid_width} x {grid_height} grid** ({grid_width * grid_height:,}"
-      f" total stitches) | Exact Size: **{actual_width_inches:.2f}\" x"
-      f" {actual_height_inches:.2f}\"** with **{num_colors}** colors."
+      f"Current Selection ({ornament_shape}, {mesh_count} Mesh, {zoom_level}x"
+      f" Zoom): **{grid_width} x {grid_height} grid** ("
+      f"{grid_width * grid_height:,} total stitches) | Exact Size:"
+      f" **{actual_width_inches:.2f}\" x {actual_height_inches:.2f}\"** with"
+      f" **{num_colors}** colors."
   )
 
   if st.button("Generate Ornament Pattern Canvas", type="primary"):
