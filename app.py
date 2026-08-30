@@ -1,5 +1,5 @@
 import io
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageDraw, ImageEnhance, UnidentifiedImageError
 import streamlit as st
 
 st.set_page_config(
@@ -17,7 +17,12 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-  original_image = Image.open(uploaded_file).convert("RGB")
+  try:
+    original_image = Image.open(uploaded_file).convert("RGB")
+  except UnidentifiedImageError:
+    st.error("Error: Could not read image file. Please try another image.")
+    st.stop()
+
   orig_w, orig_h = original_image.size
   aspect_ratio = orig_h / orig_w
 
@@ -57,6 +62,13 @@ if uploaded_file is not None:
       value=rec_colors,
       step=1,
   )
+  color_boost = st.slider(
+      "Color Vibrancy Boost",
+      min_value=1.0,
+      max_value=2.5,
+      value=1.4,
+      step=0.1,
+  )
   cell_size = st.slider(
       "Grid Zoom / Cell Pixel Size", min_value=10, max_value=30, value=20, step=2
   )
@@ -66,16 +78,20 @@ if uploaded_file is not None:
   st.info(
       f"Current Selection: **{grid_width} x {grid_height} grid** ("
       f"{grid_width * grid_height:,} total stitches) with **{num_colors}**"
-      " colors."
+      f" colors and a vibrancy multiplier of **{color_boost}x**."
   )
 
   if st.button("Generate Final Pattern Canvas", type="primary"):
     with st.spinner("Processing image and generating canvas..."):
-      small_image = original_image.resize(
-          (grid_width, grid_height), Image.Resampling.NEAREST
+      # Boost color saturation slightly to preserve photo punchiness
+      enhancer = ImageEnhance.Color(original_image)
+      vibrant_image = enhancer.enhance(color_boost)
+
+      small_image = vibrant_image.resize(
+          (grid_width, grid_height), Image.Resampling.LANCZOS
       )
       quantized_image = small_image.quantize(
-          colors=num_colors, method=Image.Quantize.MEDIANCUT
+          colors=num_colors, method=Image.MEDIANCUT
       ).convert("RGB")
 
       paletted_pixels = quantized_image.getdata()
@@ -92,16 +108,25 @@ if uploaded_file is not None:
       for y in range(0, grid_height * cell_size, cell_size):
         draw.line([(0, y), (grid_width * cell_size, y)], fill=(200, 200, 200))
 
+      # Save state to prevent any refresh layout crashes
+      st.session_state['preview_image'] = preview_image
+      st.session_state['unique_colors'] = unique_colors
+      st.session_state['generated'] = True
+
+  if st.session_state.get('generated', False):
     st.success("Canvas generated successfully!")
     st.subheader("Printable Pattern Canvas")
-    st.image(preview_image, use_container_width=True)
+    st.image(st.session_state['preview_image'], use_container_width=True)
 
     st.subheader("Color Palette & Legend")
-    for i, color in enumerate(unique_colors):
+    for i, color in enumerate(st.session_state['unique_colors']):
       swatch = Image.new("RGB", (30, 30), color)
+      sw_buf = io.BytesIO()
+      swatch.save(sw_buf, format="PNG")
+
       col_a, col_b = st.columns([1, 5])
       with col_a:
-        st.image(swatch, width=30)
+        st.image(sw_buf.getvalue(), width=30)
       with col_b:
         st.write(
             f"**Color #{i+1}** — RGB: `{color}` (Hex:"
@@ -109,7 +134,7 @@ if uploaded_file is not None:
         )
 
     buf = io.BytesIO()
-    preview_image.save(buf, format="PNG")
+    st.session_state['preview_image'].save(buf, format="PNG")
     byte_im = buf.getvalue()
 
     st.download_button(
