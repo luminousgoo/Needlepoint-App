@@ -1,15 +1,15 @@
 import io
-from PIL import Image, ImageDraw, ImageEnhance, UnidentifiedImageError
+from PIL import Image, ImageContrast, ImageDraw, ImageEnhance, UnidentifiedImageError
 import streamlit as st
 
 st.set_page_config(
     page_title="DIY Needlepoint Pattern Generator", layout="centered"
 )
 
-st.title("🪡 DIY Needlepoint Ornament Generator")
+st.title("🪡 High-Detail Needlepoint Ornament Generator")
 st.write(
-    "Upload any photo to automatically calculate the optimal canvas size and"
-    " color count, or customize them below!"
+    "Upload any photo to automatically generate a high-vibrancy, detailed"
+    " ornament pattern chart."
 )
 
 uploaded_file = st.file_uploader(
@@ -26,10 +26,10 @@ if uploaded_file is not None:
   orig_w, orig_h = original_image.size
   aspect_ratio = orig_h / orig_w
 
-  # Automated recommendation logic for an ornament (target ~60 stitches wide for high detail balance)
-  rec_width = 60
+  # Optimized defaults for high-definition ornament detail
+  rec_width = 100
   rec_height = int(rec_width * aspect_ratio)
-  rec_colors = 14  # Ideal sweet spot for photographic detail vs stitchability
+  rec_colors = 24
 
   col1, col2 = st.columns(2)
   with col1:
@@ -37,28 +37,27 @@ if uploaded_file is not None:
     st.image(original_image, use_container_width=True)
 
   with col2:
-    st.subheader("✨ Recommended Settings")
+    st.subheader("✨ High-Detail Settings")
     st.write(
-        f"Based on your image's aspect ratio, we recommend a canvas width of"
-        f" **{rec_width} stitches** (height: **{rec_height} stitches**) using"
-        f" **{rec_colors} colors** to best capture the details."
+        f"Optimized for ornament mockup quality: **{rec_width} stitches** wide"
+        f" (height: **{rec_height} stitches**) using **{rec_colors} colors** for"
+        " maximum clarity."
     )
 
   st.markdown("---")
   st.subheader("Adjust Pattern Prompts")
 
-  # Interactive prompt inputs for user preferences
   grid_width = st.slider(
       "Target Canvas Width (Stitches)",
-      min_value=30,
-      max_value=120,
+      min_value=50,
+      max_value=150,
       value=rec_width,
       step=5,
   )
   num_colors = st.slider(
       "Number of Thread Colors",
-      min_value=4,
-      max_value=24,
+      min_value=8,
+      max_value=32,
       value=rec_colors,
       step=1,
   )
@@ -66,11 +65,18 @@ if uploaded_file is not None:
       "Color Vibrancy Boost",
       min_value=1.0,
       max_value=2.5,
-      value=1.4,
+      value=1.5,
+      step=0.1,
+  )
+  contrast_boost = st.slider(
+      "Detail Contrast Boost",
+      min_value=1.0,
+      max_value=2.0,
+      value=1.2,
       step=0.1,
   )
   cell_size = st.slider(
-      "Grid Zoom / Cell Pixel Size", min_value=10, max_value=30, value=20, step=2
+      "Grid Zoom / Cell Pixel Size", min_value=10, max_value=30, value=18, step=2
   )
 
   grid_height = int(grid_width * aspect_ratio)
@@ -78,16 +84,19 @@ if uploaded_file is not None:
   st.info(
       f"Current Selection: **{grid_width} x {grid_height} grid** ("
       f"{grid_width * grid_height:,} total stitches) with **{num_colors}**"
-      f" colors and a vibrancy multiplier of **{color_boost}x**."
+      f" colors."
   )
 
-  if st.button("Generate Final Pattern Canvas", type="primary"):
-    with st.spinner("Processing image and generating canvas..."):
-      # Boost color saturation slightly to preserve photo punchiness
-      enhancer = ImageEnhance.Color(original_image)
-      vibrant_image = enhancer.enhance(color_boost)
+  if st.button("Generate High-Detail Pattern Canvas", type="primary"):
+    with st.spinner("Processing image, enhancing detail and vibrancy..."):
+      # Enhance both color saturation and contrast for sharp mockup style
+      enhancer_color = ImageEnhance.Color(original_image)
+      vibrant_image = enhancer_color.enhance(color_boost)
 
-      small_image = vibrant_image.resize(
+      enhancer_contrast = ImageEnhance.Contrast(vibrant_image)
+      detailed_image = enhancer_contrast.enhance(contrast_boost)
+
+      small_image = detailed_image.resize(
           (grid_width, grid_height), Image.Resampling.LANCZOS
       )
       quantized_image = small_image.quantize(
@@ -105,16 +114,15 @@ if uploaded_file is not None:
       draw = ImageDraw.Draw(preview_image)
       for x in range(0, grid_width * cell_size, cell_size):
         draw.line([(x, 0), (x, grid_height * cell_size)], fill=(200, 200, 200))
-      for y in range(0, grid_height * cell_size, cell_size):
+      for y in range(0, grid_width * cell_size, cell_size):
         draw.line([(0, y), (grid_width * cell_size, y)], fill=(200, 200, 200))
 
-      # Save state to prevent any refresh layout crashes
       st.session_state['preview_image'] = preview_image
       st.session_state['unique_colors'] = unique_colors
       st.session_state['generated'] = True
 
   if st.session_state.get('generated', False):
-    st.success("Canvas generated successfully!")
+    st.success("High-detail canvas generated successfully!")
     st.subheader("Printable Pattern Canvas")
     st.image(st.session_state['preview_image'], use_container_width=True)
 
@@ -138,8 +146,8 @@ if uploaded_file is not None:
     byte_im = buf.getvalue()
 
     st.download_button(
-        label="Download Pattern Canvas (.png)",
+        label="Download High-Detail Pattern Canvas (.png)",
         data=byte_im,
-        file_name="needlepoint_canvas.png",
+        file_name="high_detail_needlepoint_canvas.png",
         mime="image/png",
     )
